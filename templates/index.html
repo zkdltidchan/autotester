@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ .title }}</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h1>Server</h1>
+
+    <!-- refresh button -->
+    <button onclick="fetchServer()">Refresh</button>
+    <!-- start seeds -->
+    <button onclick="start()">Start</button>
+
+    <!-- rester brokers -->
+    <!-- <button onclick="restartBrokers()">Restart Brokers</button> -->
+    <!-- add a broker -->
+    <!-- <form id="addBrokerForm" action="/init_broker" method="POST">
+        <input type="text" name="port" placeholder="Port">
+        <button type="submit">Add Broker</button>
+    </form> -->
+
+
+    <!-- server status -->
+    <div id="serverStatus">Loading Server Status...</div>
+
+    <script>
+        $(document).ready(function () {
+            // fetch server status on page load
+            fetchServer();
+
+            $('#addBrokerForm').on('submit', function (event) {
+                event.preventDefault();
+                addBroker();
+            });
+        });
+
+        function fetchServer() {
+            $.ajax({
+                url: '/get_server',
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var brokers_view = '<ul>';
+                    Object.keys(data.brokers).forEach(function (key) {
+                        var broker = data.brokers[key];
+                        var status = broker.done ? "Done" : "Working...";
+                        brokers_view += '<li>' + key + ' - ' + status + '</li>';
+                    });
+                    brokers_view += '</ul>';
+
+                    $('#serverStatus').html(
+                        'Start Time: ' + data.uptime + '<br>' +
+                        'Simulator Server Status: ' + data.simulator_status + '<br>' +
+                        'Rerun Times: ' + data.rerun_times + '<br>' +
+                        'Broker Count: ' + data.broker_counts + '<br>' +
+                        'Brokers: ' + brokers_view
+
+                    );
+                },
+                error: function () {
+                    $('#serverStatus').html('Failed to load server status.');
+                }
+            });
+        }
+
+        function restartBrokers() {
+            $.ajax({
+                url: '/restart_brokers',
+                method: 'POST',
+                success: function (data) {
+                    fetchServer();
+                },
+                error: function () {
+                    $('#serverStatus').html('Failed to add broker.');
+                }
+            });
+        }
+
+        function start() {
+            $.ajax({
+                url: '/start',
+                method: 'POST',
+                success: function (data) {
+                    fetchServer();
+                },
+                error: function () {
+                    $('#serverStatus').html('Failed to start seeds.');
+                }
+            });
+        }
+        // auto refresh server status every 5 seconds
+        setInterval(fetchServer, 2000);
+    </script>
+</body>
+
+</html>
